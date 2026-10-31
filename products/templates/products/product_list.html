@@ -1,0 +1,31 @@
+<!-- products/templates/products/product_list.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Product Catalog</title>
+</head>
+<body>
+    <h1>Our Products</h1>
+
+    <div class="product-grid" style="display: flex; gap: 20px; flex-wrap: wrap;">
+        {% for product in context.products %}
+            <div class="product-card" style="border: 1px solid #ccc; padding: 15px; border-radius: 8px; width: 200px;">
+                <!-- Display Image Safely -->
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" style="max-width: 100%; height: auto;">
+                {% else %}
+                    <div style="background: #eee; height: 150px; display: flex; align-items: center; justify-content: center;">No Image</div>
+                {% endif %}
+
+                <h3>{{ product.name }}</h3>
+                <p>{{ product.description|truncatewords:10 }}</p>
+                <p><strong>${{ product.price }}</strong></p>
+                <small>Added: {{ product.created_at|date:"M d, Y" }}</small>
+            </div>
+        {% empty %}
+            <p>No products found in the catalog.</p>
+        {% endfor %}
+    </div>
+</body>
+</html>
