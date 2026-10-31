@@ -9,7 +9,7 @@
     <h1>Our Products</h1>
 
     <div class="product-grid" style="display: flex; gap: 20px; flex-wrap: wrap;">
-        {% for product in context.products %}
+        {% for product in products %}
             <div class="product-card" style="border: 1px solid #ccc; padding: 15px; border-radius: 8px; width: 200px;">
                 <!-- Display Image Safely -->
                 {% if product.image %}

@@ -1,4 +1,7 @@
 asgiref==3.13.0
 Django==6.1.2
+gunicorn==23.0.0
+Pillow==13.0.0
 sqlparse==0.6.0
 tzdata==2026.6
+whitenoise==6.9.0

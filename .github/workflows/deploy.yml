@@ -1,0 +1,91 @@
+name: Test and deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ec2-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Check Django configuration
+        run: python manage.py check
+
+      - name: Run tests
+        run: python manage.py test
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          test -n "$EC2_SSH_KEY" || { echo "::error::EC2_SSH_KEY is required"; exit 1; }
+          test -n "$EC2_KNOWN_HOSTS" || { echo "::error::EC2_KNOWN_HOSTS is required"; exit 1; }
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$EC2_SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$EC2_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Copy project and production settings to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+          DJANGO_ALLOWED_HOSTS: ${{ secrets.DJANGO_ALLOWED_HOSTS }}
+          DJANGO_CSRF_TRUSTED_ORIGINS: ${{ secrets.DJANGO_CSRF_TRUSTED_ORIGINS }}
+        run: |
+          set -eu
+          test -n "$EC2_HOST" || { echo "::error::EC2_HOST is required"; exit 1; }
+          test -n "$EC2_USER" || { echo "::error::EC2_USER is required"; exit 1; }
+          test -n "$DJANGO_SECRET_KEY" || { echo "::error::DJANGO_SECRET_KEY is required"; exit 1; }
+          test -n "$DJANGO_ALLOWED_HOSTS" || { echo "::error::DJANGO_ALLOWED_HOSTS is required"; exit 1; }
+          ssh "$EC2_USER@$EC2_HOST" 'test -d /opt/ecom'
+          rsync -az --delete \
+            --exclude='.git' \
+            --exclude='.venv' \
+            --exclude='__pycache__' \
+            --exclude='*.py[cod]' \
+            --exclude='.env' \
+            --exclude='db.sqlite3' \
+            --exclude='data/' \
+            --exclude='media/' \
+            --exclude='staticfiles/' \
+            ./ "$EC2_USER@$EC2_HOST:/opt/ecom/"
+          umask 077
+          printf 'DJANGO_SECRET_KEY=%s\nDJANGO_DEBUG=False\nDJANGO_ALLOWED_HOSTS=%s\nDJANGO_CSRF_TRUSTED_ORIGINS=%s\n' \
+            "$DJANGO_SECRET_KEY" "$DJANGO_ALLOWED_HOSTS" "$DJANGO_CSRF_TRUSTED_ORIGINS" \
+            > "$RUNNER_TEMP/ecom.env"
+          scp "$RUNNER_TEMP/ecom.env" "$EC2_USER@$EC2_HOST:/opt/ecom/.env"
+          ssh "$EC2_USER@$EC2_HOST" \
+            'chmod 600 /opt/ecom/.env && cd /opt/ecom && docker compose up --build -d --wait --remove-orphans'
