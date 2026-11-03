@@ -70,7 +70,8 @@ jobs:
           test -n "$EC2_USER" || { echo "::error::EC2_USER is required"; exit 1; }
           test -n "$DJANGO_SECRET_KEY" || { echo "::error::DJANGO_SECRET_KEY is required"; exit 1; }
           test -n "$DJANGO_ALLOWED_HOSTS" || { echo "::error::DJANGO_ALLOWED_HOSTS is required"; exit 1; }
-          ssh "$EC2_USER@$EC2_HOST" 'test -d /opt/ecom'
+          ssh "$EC2_USER@$EC2_HOST" \
+            'test -d /opt/ecom || { echo "/opt/ecom is missing; create it and grant ownership to the deployment user before deploying." >&2; exit 1; }'
           rsync -az --delete \
             --exclude='.git' \
             --exclude='.venv' \
