@@ -84,7 +84,7 @@ jobs:
             ./ "$EC2_USER@$EC2_HOST:/opt/ecom/"
           umask 077
           printf 'DJANGO_SECRET_KEY=%s\nDJANGO_DEBUG=False\nDJANGO_ALLOWED_HOSTS=%s\nDJANGO_CSRF_TRUSTED_ORIGINS=%s\n' \
-            "$DJANGO_SECRET_KEY" "$DJANGO_ALLOWED_HOSTS" "$DJANGO_CSRF_TRUSTED_ORIGINS" \
+            "$DJANGO_SECRET_KEY" "$DJANGO_ALLOWED_HOSTS" "${DJANGO_CSRF_TRUSTED_ORIGINS:-}" \
             > "$RUNNER_TEMP/ecom.env"
           scp "$RUNNER_TEMP/ecom.env" "$EC2_USER@$EC2_HOST:/opt/ecom/.env"
           ssh "$EC2_USER@$EC2_HOST" \

@@ -40,7 +40,7 @@ The first start automatically runs database migrations and collects static files
 
 4. Configure the instance security group:
    - Allow SSH (TCP 22) only from the deployment runner's trusted static egress IP. Do not expose SSH to `0.0.0.0/0`. GitHub-hosted runner addresses change; use a self-hosted runner or another controlled static-egress setup rather than opening SSH to the world.
-   - Allow TCP 8000 only from the intended client addresses. This starter exposes HTTP directly; use a TLS-terminating reverse proxy or load balancer before serving real users.
+   - To reach the app directly at `http://<EC2-public-IPv4>:8000`, allow inbound TCP 8000 from your client IP. Use `0.0.0.0/0` only if you intend the HTTP app to be publicly reachable from any IPv4 address. This starter exposes HTTP directly; use a TLS-terminating reverse proxy or load balancer before serving real users.
 
 ## Configure GitHub Actions
 
@@ -53,12 +53,12 @@ In the GitHub repository, open **Settings → Secrets and variables → Actions 
 | `EC2_SSH_KEY` | Private SSH key for that account (never commit it) |
 | `EC2_KNOWN_HOSTS` | Verified host-key line(s) for the EC2 host |
 | `DJANGO_SECRET_KEY` | A unique, long random Django secret |
-| `DJANGO_ALLOWED_HOSTS` | Comma-separated hostnames, e.g. `ec2-203-0-113-10.compute-1.amazonaws.com,www.example.com` |
-| `DJANGO_CSRF_TRUSTED_ORIGINS` | Optional comma-separated full origins, e.g. `https://www.example.com` |
+| `DJANGO_ALLOWED_HOSTS` | Comma-separated hostnames or the EC2 public IPv4 address (no scheme or port), e.g. `203.0.113.10` |
+| `DJANGO_CSRF_TRUSTED_ORIGINS` | Optional comma-separated full origins, e.g. `http://203.0.113.10:8000`; needed for CSRF-protected requests from that origin |
 
 Set `EC2_KNOWN_HOSTS` to the host-key entry for the same host used in `EC2_HOST`. Obtain it with `ssh-keyscan -H <EC2_HOST>` and verify the host-key fingerprint through a trusted channel before saving it. Do not disable SSH host-key checking.
 
-Push to the `main` branch (or run the workflow manually from the Actions tab). The workflow tests the project first, then deploys it to `/opt/ecom`. On EC2, Docker Compose rebuilds the image, applies migrations, collects static files, and restarts the service. The `.env` file is written from GitHub secrets on each deployment and excluded from the copied source.
+Set `DJANGO_ALLOWED_HOSTS` to the instance's current public IPv4 address, then open `http://<EC2-public-IPv4>:8000` in your browser. If the address changes, update the secret. Push to the `main` branch (or run the workflow manually from the Actions tab). The workflow tests the project first, then deploys it to `/opt/ecom`. On EC2, Docker Compose rebuilds the image, applies migrations, collects static files, and restarts the service. The `.env` file is written from GitHub secrets on each deployment and excluded from the copied source.
 
 ## Data and operations
 
