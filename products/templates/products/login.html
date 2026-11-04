@@ -1,0 +1,30 @@
+{% extends 'products/base.html' %}
+{% block title %}Log in | Common Market{% endblock %}
+{% block content %}
+    <section class="auth-layout">
+        <div class="auth-aside">
+            <p class="eyebrow">Welcome back</p>
+            <h1>Your market,<br>your community.</h1>
+            <p>Log in as a customer to shop or as a wholesaler to manage your products and sales.</p>
+        </div>
+        <div class="form-card">
+            <h2>Log in</h2>
+            <p class="muted">Use your marketplace username and password.</p>
+            <form method="post" class="stack-form">
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+                {% for field in form %}
+                    <div class="field">
+                        {{ field.label_tag }}{{ field }}
+                        {% if field.help_text %}<small>{{ field.help_text|safe }}</small>{% endif %}
+                        {% for error in field.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
+                    </div>
+                {% endfor %}
+                <input type="hidden" name="next" value="{{ next }}">
+                <button class="button button-wide" type="submit">Log in</button>
+            </form>
+            <p class="form-foot">New here? <a href="{% url 'signup' %}">Create an account</a></p>
+            <p class="form-foot">Wholesaler? <a href="{% url 'vendor_login' %}">Use the wholesaler login</a></p>
+        </div>
+    </section>
+{% endblock %}

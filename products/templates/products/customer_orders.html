@@ -1,0 +1,18 @@
+{% extends 'products/base.html' %}
+{% block title %}My orders | Common Market{% endblock %}
+{% block content %}
+    <div class="page-heading"><p class="eyebrow">Your marketplace activity</p><h1>My orders</h1><p class="muted">Your purchases from all wholesalers in one place.</p></div>
+    {% for order in orders %}
+        <section class="order-card">
+            <div class="order-heading"><div><p class="eyebrow">Order #{{ order.pk }}</p><h2>{{ order.get_status_display }}</h2></div><span class="muted">{{ order.created_at|date:"M j, Y · P" }}</span></div>
+            <div class="order-items">
+                {% for item in order.items.all %}
+                    <div class="order-line"><span>{{ item.quantity }} × {{ item.product_name }} <small>from {{ item.vendor.username }}</small></span><strong>${{ item.subtotal }}</strong></div>
+                {% endfor %}
+            </div>
+            <div class="order-foot"><span>Delivery address: {{ order.shipping_address }}</span><strong>Total ${{ order.total }}</strong></div>
+        </section>
+    {% empty %}
+        <div class="empty-state"><h2>No orders just yet</h2><p>When you place an order, you'll find it here.</p><a class="button" href="{% url 'product_list' %}">Browse the shop</a></div>
+    {% endfor %}
+{% endblock %}

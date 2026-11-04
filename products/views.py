@@ -1,6 +1,7 @@
 from decimal import Decimal
 from functools import wraps
 
+from django import forms
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
@@ -44,11 +45,31 @@ class MarketplaceLoginView(LoginView):
         return reverse('product_list')
 
 
-def sign_up(request):
+class VendorLoginView(MarketplaceLoginView):
+    def form_valid(self, form):
+        if profile_for(form.get_user()).role != UserProfile.Role.VENDOR:
+            form.add_error(None, 'This sign-in page is for wholesaler accounts.')
+            return self.form_invalid(form)
+        return super().form_valid(form)
+
+    def get_default_redirect_url(self):
+        return reverse('vendor_dashboard')
+
+
+def sign_up(request, vendor_only=False):
     if request.user.is_authenticated:
         return redirect('product_list')
 
-    form = SignUpForm(request.POST or None)
+    form_data = request.POST if request.method == 'POST' else None
+    initial = None
+    if vendor_only:
+        initial = {'role': UserProfile.Role.VENDOR}
+        if form_data is not None:
+            form_data = form_data.copy()
+            form_data['role'] = UserProfile.Role.VENDOR
+    form = SignUpForm(form_data, initial=initial)
+    if vendor_only:
+        form.fields['role'].widget = forms.HiddenInput()
     if request.method == 'POST' and form.is_valid():
         user = form.save()
         login(request, user)
@@ -58,6 +79,10 @@ def sign_up(request):
     return render(request, 'products/signup.html', {'form': form})
 
 
+def vendor_sign_up(request):
+    return sign_up(request, vendor_only=True)
+
+
 @require_POST
 def sign_out(request):
     logout(request)
@@ -65,7 +90,10 @@ def sign_out(request):
 
 
 def product_list(request):
-    products = Product.objects.filter(stock__gt=0).select_related('vendor').order_by('-created_at')
+    products = Product.objects.filter(
+        stock__gt=0,
+        vendor__isnull=False,
+    ).select_related('vendor').order_by('-created_at')
     return render(request, 'products/product_list.html', {'products': products})
 
 
@@ -83,7 +111,10 @@ def vendor_dashboard(request):
 
 @role_required(UserProfile.Role.VENDOR)
 def product_create(request):
-    form = ProductForm(request.POST or None, request.FILES or None)
+    form = ProductForm(
+        request.POST if request.method == 'POST' else None,
+        request.FILES if request.method == 'POST' else None,
+    )
     if request.method == 'POST' and form.is_valid():
         product = form.save(commit=False)
         product.vendor = request.user
@@ -96,7 +127,11 @@ def product_create(request):
 @role_required(UserProfile.Role.VENDOR)
 def product_edit(request, product_id):
     product = get_object_or_404(Product, pk=product_id, vendor=request.user)
-    form = ProductForm(request.POST or None, request.FILES or None, instance=product)
+    form = ProductForm(
+        request.POST if request.method == 'POST' else None,
+        request.FILES if request.method == 'POST' else None,
+        instance=product,
+    )
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Product details updated.')
@@ -119,7 +154,18 @@ def product_delete(request, product_id):
 
 def cart_contents(request):
     cart = request.session.get('cart', {})
-    products = Product.objects.filter(pk__in=cart).select_related('vendor')
+    products = Product.objects.filter(
+        pk__in=cart,
+        vendor__isnull=False,
+    ).select_related('vendor')
+    available_keys = {str(product.pk) for product in products}
+    stale_keys = set(cart) - available_keys
+    if stale_keys:
+        for key in stale_keys:
+            cart.pop(key, None)
+        request.session['cart'] = cart
+        messages.warning(request, 'Unavailable products were removed from your cart.')
+
     items = []
     total = Decimal('0.00')
     for product in products:
@@ -189,7 +235,7 @@ def checkout(request):
         messages.info(request, 'Your cart is empty.')
         return redirect('cart')
 
-    form = CheckoutForm(request.POST or None)
+    form = CheckoutForm(request.POST if request.method == 'POST' else None)
     if request.method == 'POST' and form.is_valid():
         cart = request.session.get('cart', {})
         try:

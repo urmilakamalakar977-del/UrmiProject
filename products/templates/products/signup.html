@@ -1,0 +1,30 @@
+{% extends 'products/base.html' %}
+{% block title %}Create account | Common Market{% endblock %}
+{% block content %}
+    <section class="auth-layout">
+        <div class="auth-aside">
+            <p class="eyebrow">Make yourself at home</p>
+            <h1>Shop or sell.<br>It's your call.</h1>
+            <p>Customers can order from several wholesalers in one checkout. Wholesalers get a simple place to list products and track sales.</p>
+            <div class="role-notes"><span>01</span> Shop independent products <span>02</span> Grow your storefront</div>
+        </div>
+        <div class="form-card">
+            <h2>Create your account</h2>
+            <p class="muted">Choose how you'll use the marketplace.</p>
+            <form method="post" class="stack-form">
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+                {% for field in form %}
+                    <div class="field">
+                        {{ field.label_tag }}{{ field }}
+                        {% if field.help_text %}<small>{{ field.help_text|safe }}</small>{% endif %}
+                        {% for error in field.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
+                    </div>
+                {% endfor %}
+                <button class="button button-wide" type="submit">Create account</button>
+            </form>
+            <p class="form-foot">Already have an account? <a href="{% url 'login' %}">Log in</a></p>
+            <p class="form-foot">Opening a shop? <a href="{% url 'vendor_signup' %}">Use wholesaler sign-up</a></p>
+        </div>
+    </section>
+{% endblock %}

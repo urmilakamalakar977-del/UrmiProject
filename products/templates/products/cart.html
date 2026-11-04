@@ -1,0 +1,41 @@
+{% extends 'products/base.html' %}
+{% block title %}Your cart | Common Market{% endblock %}
+{% block content %}
+    <div class="page-heading"><p class="eyebrow">Your picks</p><h1>Shopping cart</h1><p class="muted">Items from different wholesalers come together in one order.</p></div>
+    {% if items %}
+        <div class="cart-layout">
+            <div class="cart-items">
+                {% for item in items %}
+                    <article class="cart-item">
+                        <div class="cart-thumb">
+                            {% if item.product.image %}<img src="{{ item.product.image.url }}" alt="">
+                            {% else %}<span class="image-placeholder">CM</span>{% endif %}
+                        </div>
+                        <div class="cart-product"><span class="eyebrow">By {{ item.product.vendor.username }}</span><h3>{{ item.product.name }}</h3><span class="muted">${{ item.product.price }} each</span></div>
+                        <form method="post" action="{% url 'cart_update' item.product.pk %}" class="quantity-form">
+                            {% csrf_token %}<label class="sr-only" for="qty-{{ item.product.pk }}">Quantity</label>
+                            <input id="qty-{{ item.product.pk }}" type="number" name="quantity" min="0" max="{{ item.product.stock }}" value="{{ item.quantity }}">
+                            <button class="text-link" type="submit">Update</button>
+                        </form>
+                        <strong class="cart-subtotal">${{ item.subtotal }}</strong>
+                    </article>
+                {% endfor %}
+            </div>
+            <aside class="summary-card">
+                <p class="eyebrow">Order summary</p><h2>Ready when you are</h2>
+                <div class="summary-line"><span>Subtotal</span><strong>${{ total }}</strong></div>
+                <p class="summary-note">Shipping and payment details are arranged directly with the sellers.</p>
+                {% if user.is_authenticated and user.profile.role == 'customer' %}
+                    <a class="button button-wide" href="{% url 'checkout' %}">Continue to checkout</a>
+                {% elif not user.is_authenticated %}
+                    <a class="button button-wide" href="{% url 'login' %}?next={% url 'checkout' %}">Log in to check out</a>
+                {% else %}
+                    <p class="summary-note">Checkout is available to customer accounts. Log in with a customer account to place this order.</p>
+                {% endif %}
+                <a class="continue-link" href="{% url 'product_list' %}">Continue shopping</a>
+            </aside>
+        </div>
+    {% else %}
+        <div class="empty-state"><div class="empty-icon">🛍</div><h2>Your cart is waiting</h2><p>Browse the marketplace and add something you love.</p><a class="button" href="{% url 'product_list' %}">Explore products</a></div>
+    {% endif %}
+{% endblock %}

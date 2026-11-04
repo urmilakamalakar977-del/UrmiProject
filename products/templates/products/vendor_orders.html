@@ -1,0 +1,15 @@
+{% extends 'products/base.html' %}
+{% block title %}Sales | Common Market{% endblock %}
+{% block content %}
+    <div class="page-heading"><a class="back-link" href="{% url 'vendor_dashboard' %}">← Seller dashboard</a><p class="eyebrow">Wholesaler workspace</p><h1>Your sales</h1><p class="muted">Order items for your products, including orders shared with other sellers.</p></div>
+    <div class="sales-list">
+        {% for sale in sales %}
+            <article class="sale-card">
+                <div class="sale-row"><div><p class="eyebrow">Order #{{ sale.order_id }} · {{ sale.order.get_status_display }}</p><h3>{{ sale.product_name }}</h3><span>Customer {{ sale.order.customer.username }} · {{ sale.order.created_at|date:"M j, Y" }}</span></div><div class="sale-amount">{{ sale.quantity }} × ${{ sale.unit_price }}<strong>${{ sale.subtotal }}</strong></div></div>
+                <p class="address-line">Deliver to: {{ sale.order.shipping_address }}</p>
+            </article>
+        {% empty %}
+            <div class="empty-state"><h2>No sales yet</h2><p>Your sales will appear here after customers order your products.</p></div>
+        {% endfor %}
+    </div>
+{% endblock %}

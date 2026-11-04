@@ -1,0 +1,44 @@
+{% extends 'products/base.html' %}
+{% block title %}Seller dashboard | Common Market{% endblock %}
+{% block content %}
+    <div class="dashboard-heading">
+        <div><p class="eyebrow">Wholesaler workspace</p><h1>Your storefront</h1><p class="muted">Manage listings and keep up with customer orders.</p></div>
+        <a class="button" href="{% url 'product_create' %}">＋ Add a product</a>
+    </div>
+    <section class="dashboard-section">
+        <div class="section-heading"><div><p class="eyebrow">Your catalog</p><h2>Products</h2></div><span class="muted">{{ products|length }} listings</span></div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Product</th><th>Price</th><th>Available</th><th>Manage</th></tr></thead>
+                <tbody>
+                    {% for product in products %}
+                        <tr>
+                            <td><strong>{{ product.name }}</strong><small class="table-subtitle">{{ product.description|truncatewords:8 }}</small></td>
+                            <td>${{ product.price }}</td><td>{{ product.stock }}</td>
+                            <td class="table-actions">
+                                <a class="text-link" href="{% url 'product_edit' product.pk %}">Edit</a>
+                                <form method="post" action="{% url 'product_delete' product.pk %}" class="inline-form">
+                                    {% csrf_token %}<button class="danger-link" type="submit">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" class="table-empty">Your shop is ready. Add a product to get started.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <section class="dashboard-section">
+        <div class="section-heading"><div><p class="eyebrow">Recent activity</p><h2>Recent sales</h2></div><a class="text-link" href="{% url 'vendor_orders' %}">View all sales →</a></div>
+        {% if sales %}
+            <div class="sales-list">
+                {% for sale in sales %}
+                    <div class="sale-row"><div><strong>{{ sale.product_name }}</strong><span>Order #{{ sale.order_id }} · {{ sale.order.customer.username }}</span></div><div class="sale-amount">{{ sale.quantity }} × ${{ sale.unit_price }}</div></div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="soft-panel">Your sales will appear here when customers place orders.</div>
+        {% endif %}
+    </section>
+{% endblock %}

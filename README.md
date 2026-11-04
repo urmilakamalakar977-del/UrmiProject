@@ -1,8 +1,16 @@
 # Ecom Django app: Docker and EC2 deployment
 
-This project runs as a non-root Django/Gunicorn container. Docker Compose persists the SQLite database and uploaded media in named volumes. GitHub Actions runs Django checks and tests, then copies the project to EC2 and deploys it with Docker Compose when code is pushed to `main`.
+This project runs as a non-root Django/Gunicorn container. Customers and wholesalers can create accounts; wholesalers manage product listings and stock, while customers can add products from multiple wholesalers to one cart and place an order. Orders are recorded for the customer and shown to each wholesaler for their items. Online payments are not integrated yet; payment and delivery are coordinated with sellers. Docker Compose persists the SQLite database and uploaded media in named volumes. GitHub Actions runs Django checks and tests, then copies the project to EC2 and deploys it with Docker Compose when code is pushed to `main`.
 
-The app is available at `http://<EC2-public-DNS>:8000/products/`.
+The app is available at `http://<EC2-public-DNS>:8000/`.
+
+## Marketplace accounts
+
+- Visit **Create account** and choose **Customer** or **Wholesaler**, or use the dedicated `/products/vendor/signup/` page. Customers use `/products/login/`; wholesalers can use `/products/vendor/login/`.
+- Wholesalers can add products, set price and stock, upload an optional image, edit listings, and see sales in the seller portal.
+- Customers can shop, update a multi-seller cart, provide a delivery address, place orders, and review their order history.
+- Product and order prices are saved at order time. Stock is checked and reduced when an order is placed.
+- Orders are not charged online. Add a payment provider and configure seller fulfillment before using this for live commerce.
 
 ## Run locally with Docker
 
@@ -14,7 +22,7 @@ The app is available at `http://<EC2-public-DNS>:8000/products/`.
    docker compose up --build
    ```
 
-4. Open `http://localhost:8000/products/`.
+4. Open `http://localhost:8000/`, create a wholesaler account, and add an in-stock product. Create a customer account in a separate browser session to test shopping and checkout.
 
 The first start automatically runs database migrations and collects static files.
 
@@ -54,7 +62,7 @@ In the GitHub repository, open **Settings → Secrets and variables → Actions 
 | `EC2_KNOWN_HOSTS` | Verified host-key line(s) for the EC2 host |
 | `DJANGO_SECRET_KEY` | A unique, long random Django secret |
 | `DJANGO_ALLOWED_HOSTS` | Comma-separated hostnames or the EC2 public IPv4 address (no scheme or port), e.g. `203.0.113.10` |
-| `DJANGO_CSRF_TRUSTED_ORIGINS` | Optional comma-separated full origins, e.g. `http://203.0.113.10:8000`; needed for CSRF-protected requests from that origin |
+| `DJANGO_CSRF_TRUSTED_ORIGINS` | Optional comma-separated full origins for additional trusted origins, e.g. `https://shop.example.com` |
 
 Set `EC2_KNOWN_HOSTS` to the host-key entry for the same host used in `EC2_HOST`. Obtain it with `ssh-keyscan -H <EC2_HOST>` and verify the host-key fingerprint through a trusted channel before saving it. Do not disable SSH host-key checking.
 

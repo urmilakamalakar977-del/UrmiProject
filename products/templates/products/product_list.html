@@ -1,31 +1,54 @@
-<!-- products/templates/products/product_list.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Product Catalog</title>
-</head>
-<body>
-    <h1>Our Products</h1>
+{% extends 'products/base.html' %}
+{% block title %}Shop independent sellers | Common Market{% endblock %}
+{% block content %}
+    <section class="hero">
+        <div>
+            <p class="eyebrow">A marketplace for everyone</p>
+            <h1>Good finds.<br><span>Independent sellers.</span></h1>
+            <p class="hero-copy">Discover products from multiple wholesalers and check out in one simple order.</p>
+            <a class="button button-light" href="#catalog">Explore the shop <span aria-hidden="true">↓</span></a>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+            <div class="art-sun"></div><div class="art-box art-box-one"></div>
+            <div class="art-box art-box-two"></div><div class="art-leaf"></div>
+        </div>
+    </section>
 
-    <div class="product-grid" style="display: flex; gap: 20px; flex-wrap: wrap;">
+    <section id="catalog" class="section-heading">
+        <div><p class="eyebrow">The marketplace</p><h2>Shop the latest</h2></div>
+        <span class="muted">{{ products|length }} products</span>
+    </section>
+    <div class="product-grid">
         {% for product in products %}
-            <div class="product-card" style="border: 1px solid #ccc; padding: 15px; border-radius: 8px; width: 200px;">
-                <!-- Display Image Safely -->
-                {% if product.image %}
-                    <img src="{{ product.image.url }}" alt="{{ product.name }}" style="max-width: 100%; height: auto;">
-                {% else %}
-                    <div style="background: #eee; height: 150px; display: flex; align-items: center; justify-content: center;">No Image</div>
-                {% endif %}
-
-                <h3>{{ product.name }}</h3>
-                <p>{{ product.description|truncatewords:10 }}</p>
-                <p><strong>${{ product.price }}</strong></p>
-                <small>Added: {{ product.created_at|date:"M d, Y" }}</small>
-            </div>
+            <article class="product-card">
+                <div class="product-image">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                    {% else %}
+                        <span class="image-placeholder">CM</span>
+                    {% endif %}
+                </div>
+                <div class="product-info">
+                    <div class="product-meta"><span>By {{ product.vendor.username }}</span><span>{{ product.stock }} in stock</span></div>
+                    <h3>{{ product.name }}</h3>
+                    <p class="product-description">{{ product.description|truncatewords:18 }}</p>
+                    <div class="product-buy">
+                        <strong>${{ product.price }}</strong>
+                        <form method="post" action="{% url 'cart_add' product.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="quantity" value="1">
+                            <button class="button button-small" type="submit">Add to cart</button>
+                        </form>
+                    </div>
+                </div>
+            </article>
         {% empty %}
-            <p>No products found in the catalog.</p>
+            <div class="empty-state">
+                <div class="empty-icon">✳</div>
+                <h3>New finds are on the way</h3>
+                <p>There aren't any products in stock yet. Wholesalers can sign up and add the first listings.</p>
+                <a class="button" href="{% url 'vendor_signup' %}">Join as a wholesaler</a>
+            </div>
         {% endfor %}
     </div>
-</body>
-</html>
+{% endblock %}

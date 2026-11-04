@@ -1,0 +1,25 @@
+{% extends 'products/base.html' %}
+{% block title %}Checkout | Common Market{% endblock %}
+{% block content %}
+    <div class="page-heading"><p class="eyebrow">Almost there</p><h1>Checkout</h1><p class="muted">One order for your items from multiple wholesalers.</p></div>
+    <div class="cart-layout">
+        <div class="form-card">
+            <h2>Delivery details</h2>
+            <form method="post" class="stack-form">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="field">{{ field.label_tag }}{{ field }}{% for error in field.errors %}<small class="error-text">{{ error }}</small>{% endfor %}</div>
+                {% endfor %}
+                <p class="summary-note">This places an order request. Online payment is not set up yet; coordinate payment and delivery with the wholesalers.</p>
+                <button class="button button-wide" type="submit">Place order · ${{ total }}</button>
+            </form>
+        </div>
+        <aside class="summary-card">
+            <p class="eyebrow">Your order</p>
+            {% for item in items %}
+                <div class="summary-line"><span>{{ item.quantity }} × {{ item.product.name }}<small class="table-subtitle">from {{ item.product.vendor.username }}</small></span><strong>${{ item.subtotal }}</strong></div>
+            {% endfor %}
+            <div class="summary-line summary-total"><span>Total</span><strong>${{ total }}</strong></div>
+        </aside>
+    </div>
+{% endblock %}
